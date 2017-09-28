@@ -2,9 +2,12 @@
   "name": "git-cleanup",
   "version": "1.0.0",
   "description": "",
-  "main": "git-cleanup-branches.js",
+  "main": "git-cleanup-branches.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "cleanup-ts": "./git-cleanup-branches.ts"
   },
   "author": "",
   "license": "ISC",
