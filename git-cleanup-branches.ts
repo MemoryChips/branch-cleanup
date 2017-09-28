@@ -5,7 +5,7 @@
 import chalk = require('chalk')
 import figlet = require('figlet')
 import git = require('simple-git/promise')
-import gitraw = require('simple-git')
+import gitraw = require('simple-git')  // raw command is unavailable in the promise version
 
 // var files = require('./lib/files')
 import argv = require('yargs')
