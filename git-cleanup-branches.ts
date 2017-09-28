@@ -5,6 +5,8 @@
 import chalk = require('chalk')
 import figlet = require('figlet')
 import git = require('simple-git/promise')
+import gitraw = require('simple-git')
+
 // var files = require('./lib/files')
 import argv = require('yargs')
 argv
@@ -51,22 +53,23 @@ console.log(
 git()
   .status()
   .then((statusSummary) => {
-    console.log(statusSummary)
+    // console.log(statusSummary)
+    let currentBranch = statusSummary.current
+    console.log(`You are on branch %s. How about that?`, currentBranch)
     // if (statusSummary.index)
-    // git()
-    //   .branchLocal()
-    //   .then((summary) => {
-    //     console.log(summary.all)
-    //     // if (err) {return console.log(err)}
-    //     // console.log(summary)
-    //     // console.log(summary.branches)
-    //   })
+    gitraw()
+      .raw(['branch'], (err, branchSummary) => {
+        console.log(branchSummary)
+      })
   })
   .catch((err) => {
     console.log(err)
   })
 
-// git.branchLocal( (err, summary) => {
+
+
+
+  // git.branchLocal( (err, summary) => {
 //   if (err) {return console.log(err)}
 //   console.log(summary)
 //   console.log(summary.branches)
