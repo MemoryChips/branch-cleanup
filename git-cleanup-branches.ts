@@ -7,6 +7,8 @@ import figlet = require('figlet')
 import git = require('simple-git/promise')
 import gitraw = require('simple-git')  // raw command is unavailable in the promise version
 import { options } from './options'
+import inquirer = require('inquirer')
+
 // var files = require('./lib/files')
 // clear()
 console.log(
@@ -20,48 +22,87 @@ console.log(
 //   process.exit()
 // }
 
-console.log(options)
+// console.log(options)
 
 function isBranchExcluded(branch: string): boolean {
   return !options.excludes.every(excludedBranch => branch !== excludedBranch)
 }
 const localRepo = '__LOCAL_REPO__'
 
+function getReposForSlaughter(branchSummary): {} {
+  let repos = { [localRepo]: [] }
+  repos[localRepo] = []
+  const re = /[\ \*]+/g
+  let branches = branchSummary.split('\n').map((b) => {
+    return b.replace(re, '')
+  })
+  branches.forEach(b => {
+    if (b.startsWith('remotes/')) {
+      if (!b.includes('HEAD->origin')) {
+        let branchRemote = b.substr(8)
+        let pos = branchRemote.indexOf('/')
+        let remote = branchRemote.substr(0, pos)
+        let branch = branchRemote.substr(pos + 1)
+        if (!isBranchExcluded(branch)) {
+          if (!repos[remote]) { repos[remote] = [] }
+          repos[remote].push(branch)
+        }
+      }
+    }
+    else {
+      if (b.length !== 0 && !isBranchExcluded(b)) { repos[localRepo].push(b) }
+    }
+  })
+  // console.log(branches)
+  // console.log(repos)
+  return repos
+}
+
+function isStatusSummaryClean(statusSummary: object): boolean {
+  const items = ['not_added', 'conflicted', 'created', 'deleted', 'modified', 'renamed']
+  return items.every((i) => statusSummary[i].length === 0)
+}
+
+let continueQuestion = {
+  type: 'confirm',
+  name: 'continue',
+  message: 'Continue?',
+}
+
 git()
   .status()
   .then((statusSummary) => {
-    // console.log(statusSummary)
     let currentBranch = statusSummary.current
-    console.log(`You are on branch %s. How about that?`, currentBranch)
-    // if (statusSummary.index)
-    gitraw()
-      .raw(['branch', '-a'], (err, branchSummary) => {
-        if (err) { throw new Error(err) }
-        const re = /[\ \*]+/g
-        let branches = branchSummary.split('\n').map((b) => {
-          return b.replace(re,'')
-        })
-        let repos = { [localRepo]: [] }
-        repos[localRepo] = []
-        branches.forEach(b => {
-          if (b.startsWith('remotes/')) {
-            if (!b.includes('HEAD->origin')) {
-              let branchRemote = b.substr(8)
-              let pos = branchRemote.indexOf('/')
-              let remote = branchRemote.substr(0, pos)
-              let branch = branchRemote.substr(pos + 1)
-              if (!isBranchExcluded(branch)) {
-                if (!repos[remote]) { repos[remote] = [] }
-                repos[remote].push(branch)
-              }
-            }
-          }
-          else {
-            if (b.length !== 0 && !isBranchExcluded(b)) { repos[localRepo].push(b) }
-          }
-        })
-        console.log(branches)
-        console.log(repos)
+    console.log(chalk.yellow('You are on branch ' + currentBranch))
+    if (currentBranch !== 'master') {
+      console.log(chalk.yellow('You are not on the master branch.'))
+      console.log(chalk.yellow('This branch will be removed from the list of branches to be slaughtered.'))
+      options.excludes.push(currentBranch)
+    }
+    if (isStatusSummaryClean(statusSummary)) {
+      console.log(chalk.green('The current branch is clean. '))
+    }
+    else {
+      console.log(statusSummary)
+      console.log(chalk.red('The current branch is dirty\nYou should commit the changes before continuing.'))
+    }
+    inquirer.prompt([continueQuestion])
+      .then((answers) => {
+        // console.log(answers)
+        if (answers.continue) {
+          gitraw()
+          .raw(['branch', '-a'], (err, branchSummary) => {
+            if (err) { throw new Error(err) }
+            let reposForSlaughter = getReposForSlaughter(branchSummary);
+            console.log(reposForSlaughter)
+          })
+        }
+        else {
+          console.log(chalk.yellow('exiting...'))
+        }
+      })
+      .catch((err) => {
+        console.log(err)
       })
   })
   .catch((err) => {
