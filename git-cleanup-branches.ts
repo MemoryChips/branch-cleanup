@@ -90,8 +90,7 @@ git()
       .then((answers) => {
         // console.log(answers)
         if (answers.continue) {
-          gitraw()
-          .raw(['branch', '-a'], (err, branchSummary) => {
+          gitraw().raw(['branch', '-a'], (err, branchSummary) => {
             if (err) { throw new Error(err) }
             let reposForSlaughter = getReposForSlaughter(branchSummary);
             console.log(reposForSlaughter)
@@ -101,6 +100,10 @@ git()
             }
             else {
               // continue with the slaughter
+              gitraw().raw(['remote', 'update', '--prune'], (upErr, remoteUpdateResp) => {
+                if (upErr) { throw new Error(upErr) }
+                console.log(remoteUpdateResp)
+              })
             }
           })
         }
