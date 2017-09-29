@@ -6,36 +6,8 @@ import chalk = require('chalk')
 import figlet = require('figlet')
 import git = require('simple-git/promise')
 import gitraw = require('simple-git')  // raw command is unavailable in the promise version
-
+import { options } from './options'
 // var files = require('./lib/files')
-import argv = require('yargs')
-let options = argv
-  .version('version', '1.0.0', 'Version 1.0.0')
-  .alias('version', 'v')
-  .option('e', {
-    default: ["master", "development", "dev"],
-    array: true,
-    alias: "excludes",
-    description: "list of branches to exclude"
-  })
-  .option('i', {
-    default: [],
-    array: true,
-    alias: "includes",
-    description: "list of branches to include (if empty all branches not excluded will be included)"
-  })
-  .option('l', {
-    default: true,
-    alias: "local",
-    description: "Clean up local repo"
-  })
-  .option('r', {
-    default: true,
-    alias: "remote",
-    description: "Clean up remote repo"
-  })
-  .argv
-
 // clear()
 console.log(
   chalk.yellow(
@@ -53,6 +25,7 @@ console.log(options)
 function isBranchExcluded(branch: string): boolean {
   return !options.excludes.every(excludedBranch => branch !== excludedBranch)
 }
+const localRepo = '__LOCAL_REPO__'
 
 git()
   .status()
@@ -68,8 +41,8 @@ git()
         let branches = branchSummary.split('\n').map((b) => {
           return b.replace(re,'')
         })
-        let remoteBranches = {}
-        let localBranches: string[] = []
+        let repos = { [localRepo]: [] }
+        repos[localRepo] = []
         branches.forEach(b => {
           if (b.startsWith('remotes/')) {
             if (!b.includes('HEAD->origin')) {
@@ -78,18 +51,17 @@ git()
               let remote = branchRemote.substr(0, pos)
               let branch = branchRemote.substr(pos + 1)
               if (!isBranchExcluded(branch)) {
-                if (!remoteBranches[remote]) { remoteBranches[remote] = [] }
-                remoteBranches[remote].push(branch)
+                if (!repos[remote]) { repos[remote] = [] }
+                repos[remote].push(branch)
               }
             }
           }
           else {
-            if (b.length !== 0 && !isBranchExcluded(b)) { localBranches.push(b) }
+            if (b.length !== 0 && !isBranchExcluded(b)) { repos[localRepo].push(b) }
           }
         })
         console.log(branches)
-        console.log(remoteBranches)
-        console.log(localBranches)
+        console.log(repos)
       })
   })
   .catch((err) => {
