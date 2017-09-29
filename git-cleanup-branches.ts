@@ -12,7 +12,7 @@ import inquirer = require('inquirer')
 // var files = require('./lib/files')
 // clear()
 console.log(
-  chalk.yellow(
+  chalk.cyanBright.bold(
     figlet.textSync('Branch Cleanup', { horizontalLayout: 'full' })
   )
 )
@@ -76,7 +76,8 @@ git()
     console.log(chalk.yellow('You are on branch ' + currentBranch))
     if (currentBranch !== 'master') {
       console.log(chalk.yellow('You are not on the master branch.'))
-      console.log(chalk.yellow('This branch will be removed from the list of branches to be slaughtered.'))
+      // console.log(chalk.yellow.bold('The ' + currentBranch + 'will be removed from the list of branches to be slaughtered.'))
+      console.log(chalk.yellow('The ') + chalk.green.bold(currentBranch) + chalk.yellow(' will be removed from the list of branches to be slaughtered.'))
       options.excludes.push(currentBranch)
     }
     if (isStatusSummaryClean(statusSummary)) {
@@ -84,7 +85,8 @@ git()
     }
     else {
       console.log(statusSummary)
-      console.log(chalk.red('The current branch is dirty\nYou should commit the changes before continuing.'))
+      console.log(chalk.red.bold('The current branch is dirty.'))
+      console.log(chalk.green('You should commit the changes before continuing.'))
     }
     inquirer.prompt([continueQuestion])
       .then((answers) => {
