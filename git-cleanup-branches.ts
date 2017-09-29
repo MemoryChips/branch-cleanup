@@ -105,6 +105,11 @@ git()
               gitraw().raw(['remote', 'update', '--prune'], (upErr, remoteUpdateResp) => {
                 if (upErr) { throw new Error(upErr) }
                 console.log(remoteUpdateResp)
+                // now commite murder on innocent branches
+                let repos = Object.keys(reposForSlaughter)
+                repos.forEach((r) => {
+                  console.log('git push -d ' + reposForSlaughter[r].join(' '))
+                })
               })
             }
           })
