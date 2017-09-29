@@ -9,7 +9,7 @@ import gitraw = require('simple-git')  // raw command is unavailable in the prom
 
 // var files = require('./lib/files')
 import argv = require('yargs')
-argv
+let options = argv
   .version('version', '1.0.0', 'Version 1.0.0')
   .alias('version', 'v')
   .option('e', {
@@ -48,7 +48,11 @@ console.log(
 //   process.exit()
 // }
 
-// console.log(argv)
+console.log(options)
+
+function isBranchExcluded(branch: string): boolean {
+  return !options.excludes.every(excludedBranch => branch !== excludedBranch)
+}
 
 git()
   .status()
@@ -58,11 +62,38 @@ git()
     console.log(`You are on branch %s. How about that?`, currentBranch)
     // if (statusSummary.index)
     gitraw()
-      .raw(['branch'], (err, branchSummary) => {
-        console.log(branchSummary)
+      .raw(['branch', '-a'], (err, branchSummary) => {
+        if (err) { throw new Error(err) }
+        const re = /[\ \*]+/g
+        let branches = branchSummary.split('\n').map((b) => {
+          return b.replace(re,'')
+        })
+        let remoteBranches = {}
+        let localBranches: string[] = []
+        branches.forEach(b => {
+          if (b.startsWith('remotes/')) {
+            if (!b.includes('HEAD->origin')) {
+              let branchRemote = b.substr(8)
+              let pos = branchRemote.indexOf('/')
+              let remote = branchRemote.substr(0, pos)
+              let branch = branchRemote.substr(pos + 1)
+              if (!isBranchExcluded(branch)) {
+                if (!remoteBranches[remote]) { remoteBranches[remote] = [] }
+                remoteBranches[remote].push(branch)
+              }
+            }
+          }
+          else {
+            if (b.length !== 0 && !isBranchExcluded(b)) { localBranches.push(b) }
+          }
+        })
+        console.log(branches)
+        console.log(remoteBranches)
+        console.log(localBranches)
       })
   })
   .catch((err) => {
+    console.log('An error has occurred.')
     console.log(err)
   })
 
