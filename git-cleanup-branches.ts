@@ -95,6 +95,13 @@ git()
             if (err) { throw new Error(err) }
             let reposForSlaughter = getReposForSlaughter(branchSummary);
             console.log(reposForSlaughter)
+            let repos = Object.keys(reposForSlaughter)
+            if (repos.every((r) => reposForSlaughter[r].length === 0)) {
+              console.log(chalk.green('There are no branches to slaughter.'))
+            }
+            else {
+              // continue with the slaughter
+            }
           })
         }
         else {
