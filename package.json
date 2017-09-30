@@ -4,12 +4,14 @@
   "description": "",
   "main": "git-cleanup-branches.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc git-cleanup-branches; mv git-cleanup-branches.js cleanup.js; chmod +x cleanup.js"
   },
   "bin": {
-    "cleanup-ts": "./git-cleanup-branches.ts"
+    "cleanup-ts": "./git-cleanup-branches.ts",
+    "cleanup-branches": "./cleanup.js"
   },
-  "author": "",
+  "author": "Robert Tamlyn",
   "license": "ISC",
   "dependencies": {
     "argparse": "^1.0.9",
@@ -17,10 +19,10 @@
     "figlet": "^1.2.0",
     "inquirer": "^3.3.0",
     "simple-git": "^1.77.0",
-    "ts-node": "^3.3.0",
     "yargs": "^9.0.1"
   },
   "devDependencies": {
+    "ts-node": "^3.3.0",
     "tslint": "^5.7.0"
   }
 }

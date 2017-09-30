@@ -16,6 +16,7 @@ console.log(
 )
 
 const alwaysExclude = ["master", "development", "dev"]
+// const alwaysExclude = ["dev"]
 const allExcludes = alwaysExclude.concat(options.excludes)
 
 function isBranchExcluded(branch: string): boolean {
@@ -84,6 +85,7 @@ git()
       .then((answers) => {
         if (answers.continue) {
           gitraw().raw(['branch', '-a'], (err, branchSummary) => {
+            // console.log(branchSummary)
             if (err) { throw new Error(err) }
             let reposForSlaughter = getReposForSlaughter(branchSummary);
             let repos = Object.keys(reposForSlaughter)
@@ -96,10 +98,23 @@ git()
                 if (upErr) { throw new Error(upErr) }
                 // now commit murder on innocent branches
                 let repos = Object.keys(reposForSlaughter)
+                console.log(reposForSlaughter)
                 repos.forEach((r) => {
                   // create branch delete commands
                   let command = (r === LOCAL_REPO) ? 'git branch -d ' : 'git push ' + r + ' --delete '
-                  console.log(command + reposForSlaughter[r].join(' '))
+                  command += reposForSlaughter[r].join(' ')
+                  if (options['dry-run']) {
+                    console.log('Dry run only. Add --exec to perform deletes')
+                    console.log(command)
+                  } else {
+                    if (options.local && r === LOCAL_REPO) {
+                      console.log(command)
+                    } else {
+                      if (options.remote && r !== LOCAL_REPO) {
+                        console.log(command)
+                      }
+                    }
+                  }
                 })
               })
             }

@@ -3,7 +3,7 @@ export var options = argv
   .version('version', '1.0.0', 'Version 1.0.0')
   .alias('version', 'v')
   .option('e', {
-    default: ["master", "development", "dev"],
+    default: [],
     array: true,
     alias: "excludes",
     description: "list of branches to exclude"
@@ -23,5 +23,10 @@ export var options = argv
     default: true,
     alias: "remote",
     description: "Clean up remote repo"
+  })
+  .option('d', {
+    default: false,
+    alias: "dry-run",
+    description: "Run the delete command. Defaults to false(dry-run)"
   })
   .argv

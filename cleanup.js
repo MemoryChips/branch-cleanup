@@ -7,21 +7,17 @@ var git = require("simple-git/promise");
 var gitraw = require("simple-git"); // raw command is unavailable in the promise version
 var options_1 = require("./options");
 var inquirer = require("inquirer");
-// var files = require('./lib/files')
-// clear()
 console.log(chalk.cyanBright.bold(figlet.textSync('Branch Cleanup', { horizontalLayout: 'full' })));
-// if (!files.directoryExists('.git')) {
-//   console.log(chalk.red('Git repository not found!'))
-//   process.exit()
-// }
-// console.log(options)
+var alwaysExclude = ["master", "development", "dev"];
+// const alwaysExclude = ["dev"]
+var allExcludes = alwaysExclude.concat(options_1.options.excludes);
 function isBranchExcluded(branch) {
-    return !options_1.options.excludes.every(function (excludedBranch) { return branch !== excludedBranch; });
+    return !allExcludes.every(function (excludedBranch) { return branch !== excludedBranch; });
 }
-var localRepo = '__LOCAL_REPO__';
+var LOCAL_REPO = '__LOCAL_REPO__';
 function getReposForSlaughter(branchSummary) {
-    var repos = (_a = {}, _a[localRepo] = [], _a);
-    repos[localRepo] = [];
+    var repos = (_a = {}, _a[LOCAL_REPO] = [], _a);
+    repos[LOCAL_REPO] = [];
     var re = /[\ \*]+/g;
     var branches = branchSummary.split('\n').map(function (b) {
         return b.replace(re, '');
@@ -43,12 +39,10 @@ function getReposForSlaughter(branchSummary) {
         }
         else {
             if (b.length !== 0 && !isBranchExcluded(b)) {
-                repos[localRepo].push(b);
+                repos[LOCAL_REPO].push(b);
             }
         }
     });
-    // console.log(branches)
-    // console.log(repos)
     return repos;
     var _a;
 }
@@ -59,7 +53,8 @@ function isStatusSummaryClean(statusSummary) {
 var continueQuestion = {
     type: 'confirm',
     name: 'continue',
-    message: 'Continue?'
+    message: 'Continue?',
+    "default": false
 };
 git()
     .status()
@@ -68,7 +63,6 @@ git()
     console.log(chalk.yellow('You are on branch ' + currentBranch));
     if (currentBranch !== 'master') {
         console.log(chalk.yellow('You are not on the master branch.'));
-        // console.log(chalk.yellow.bold('The ' + currentBranch + 'will be removed from the list of branches to be slaughtered.'))
         console.log(chalk.yellow('The ') + chalk.green.bold(currentBranch) + chalk.yellow(' will be removed from the list of branches to be slaughtered.'));
         options_1.options.excludes.push(currentBranch);
     }
@@ -82,14 +76,13 @@ git()
     }
     inquirer.prompt([continueQuestion])
         .then(function (answers) {
-        // console.log(answers)
         if (answers["continue"]) {
             gitraw().raw(['branch', '-a'], function (err, branchSummary) {
+                console.log(branchSummary);
                 if (err) {
                     throw new Error(err);
                 }
                 var reposForSlaughter = getReposForSlaughter(branchSummary);
-                console.log(reposForSlaughter);
                 var repos = Object.keys(reposForSlaughter);
                 if (repos.every(function (r) { return reposForSlaughter[r].length === 0; })) {
                     console.log(chalk.green('There are no branches to slaughter.'));
@@ -100,11 +93,27 @@ git()
                         if (upErr) {
                             throw new Error(upErr);
                         }
-                        console.log(remoteUpdateResp);
-                        // now commite murder on innocent branches
+                        // now commit murder on innocent branches
                         var repos = Object.keys(reposForSlaughter);
+                        console.log(reposForSlaughter);
                         repos.forEach(function (r) {
-                            console.log('git push -d ' + reposForSlaughter[r].join(' '));
+                            // create branch delete commands
+                            var command = (r === LOCAL_REPO) ? 'git branch -d ' : 'git push ' + r + ' --delete ';
+                            command += reposForSlaughter[r].join(' ');
+                            if (options_1.options['dry-run']) {
+                                console.log('Dry run only. Add --exec to perform deletes');
+                                console.log(command);
+                            }
+                            else {
+                                if (options_1.options.local && r === LOCAL_REPO) {
+                                    console.log(command);
+                                }
+                                else {
+                                    if (options_1.options.remote && r !== LOCAL_REPO) {
+                                        console.log(command);
+                                    }
+                                }
+                            }
                         });
                     });
                 }
