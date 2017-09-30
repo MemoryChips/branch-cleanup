@@ -15,13 +15,17 @@
   "license": "ISC",
   "dependencies": {
     "argparse": "^1.0.9",
+    "chalk": "^2.1.0",
     "commander": "^2.11.0",
     "figlet": "^1.2.0",
     "inquirer": "^3.3.0",
     "simple-git": "^1.77.0",
+    "typescript": "^2.5.3",
     "yargs": "^9.0.1"
   },
   "devDependencies": {
+    "@types/inquirer": "0.0.35",
+    "@types/node": "^8.0.31",
     "ts-node": "^3.3.0",
     "tslint": "^5.7.0"
   }

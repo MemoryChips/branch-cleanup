@@ -1,13 +1,18 @@
 #!/usr/bin/env ts-node
 
-"use strict"
+'use strict'
 
-import chalk = require('chalk')
-import figlet = require('figlet')
+// import chalk = require('chalk')
+const chalk = require('chalk')
+// import figlet = require('figlet')
+const figlet = require('figlet')
 import git = require('simple-git/promise')
-import gitraw = require('simple-git')  // raw command is unavailable in the promise version
+// import gitraw = require('simple-git')  // raw command is unavailable in the promise version
+const gitraw = require('simple-git')  // raw command is unavailable in the promise version
 import { options } from './options'
 import inquirer = require('inquirer')
+
+// declare var chalk: any
 
 console.log(
   chalk.cyanBright.bold(
@@ -15,7 +20,7 @@ console.log(
   )
 )
 
-const alwaysExclude = ["master", "development", "dev"]
+const alwaysExclude = ['master', 'development', 'dev']
 // const alwaysExclude = ["dev"]
 const allExcludes = alwaysExclude.concat(options.excludes)
 
@@ -24,39 +29,46 @@ function isBranchExcluded(branch: string): boolean {
 }
 const LOCAL_REPO = '__LOCAL_REPO__'
 
-function getReposForSlaughter(branchSummary): {} {
-  let repos = { [LOCAL_REPO]: [] }
+interface IReposSummary {
+  [index: string]: string[]
+}
+function getReposForSlaughter(branchSummary: string): IReposSummary {
+  const repos: IReposSummary = {}
   repos[LOCAL_REPO] = []
   const re = /[\ \*]+/g
-  let branches = branchSummary.split('\n').map((b) => {
+  const branches = branchSummary.split('\n').map((b) => {
     return b.replace(re, '')
   })
   branches.forEach(b => {
     if (b.startsWith('remotes/')) {
       if (!b.includes('HEAD->origin')) {
-        let branchRemote = b.substr(8)
-        let pos = branchRemote.indexOf('/')
-        let remote = branchRemote.substr(0, pos)
-        let branch = branchRemote.substr(pos + 1)
+        const branchRemote = b.substr(8)
+        const pos = branchRemote.indexOf('/')
+        const remote = branchRemote.substr(0, pos)
+        const branch = branchRemote.substr(pos + 1)
         if (!isBranchExcluded(branch)) {
           if (!repos[remote]) { repos[remote] = [] }
           repos[remote].push(branch)
         }
       }
-    }
-    else {
+    } else {
       if (b.length !== 0 && !isBranchExcluded(b)) { repos[LOCAL_REPO].push(b) }
     }
   })
   return repos
 }
 
-function isStatusSummaryClean(statusSummary: object): boolean {
-  const items = ['not_added', 'conflicted', 'created', 'deleted', 'modified', 'renamed']
-  return items.every((i) => statusSummary[i].length === 0)
+function isStatusSummaryClean(statusSummary: git.StatusResult): boolean {
+  return statusSummary.not_added.length === 0 &&
+    statusSummary.conflicted.length === 0 &&
+    statusSummary.created.length === 0 &&
+    statusSummary.deleted.length === 0 &&
+    statusSummary.modified.length === 0 &&
+    statusSummary.renamed.length === 0
+  // return items.every((i) => (<string[]>statusSummary[i]).length === 0)
 }
 
-let continueQuestion = {
+const continueQuestion = {
   type: 'confirm',
   name: 'continue',
   message: 'Continue?',
@@ -65,18 +77,20 @@ let continueQuestion = {
 
 git()
   .status()
-  .then((statusSummary) => {
-    let currentBranch = statusSummary.current
+  .then((statusSummary: git.StatusResult) => {
+    const currentBranch = statusSummary.current
     console.log(chalk.yellow('You are on branch ' + currentBranch))
     if (currentBranch !== 'master') {
       console.log(chalk.yellow('You are not on the master branch.'))
-      console.log(chalk.yellow('The ') + chalk.green.bold(currentBranch) + chalk.yellow(' will be removed from the list of branches to be slaughtered.'))
+      console.log(
+        chalk.yellow('The ') +
+        chalk.green.bold(currentBranch) +
+        chalk.yellow(' will be removed from the list of branches to be slaughtered.'))
       options.excludes.push(currentBranch)
     }
     if (isStatusSummaryClean(statusSummary)) {
       console.log(chalk.green('The current branch is clean. '))
-    }
-    else {
+    } else {
       console.log(statusSummary)
       console.log(chalk.red.bold('The current branch is dirty.'))
       console.log(chalk.green('You should commit the changes before continuing.'))
@@ -84,20 +98,19 @@ git()
     inquirer.prompt([continueQuestion])
       .then((answers) => {
         if (answers.continue) {
-          gitraw().raw(['branch', '-a'], (err, branchSummary) => {
+          gitraw().raw(['branch', '-a'], (err: string, branchSummary: any) => {
             // console.log(branchSummary)
             if (err) { throw new Error(err) }
-            let reposForSlaughter = getReposForSlaughter(branchSummary);
-            let repos = Object.keys(reposForSlaughter)
+            const reposForSlaughter = getReposForSlaughter(branchSummary)
+            const repos = Object.keys(reposForSlaughter)
             if (repos.every((r) => reposForSlaughter[r].length === 0)) {
               console.log(chalk.green('There are no branches to slaughter.'))
-            }
-            else {
+            } else {
               // continue with the slaughter
-              gitraw().raw(['remote', 'update', '--prune'], (upErr, remoteUpdateResp) => {
+              // gitraw().raw(['remote', 'update', '--prune'], (upErr: string, remoteUpdateResp) => {
+              gitraw().raw(['remote', 'update', '--prune'], (upErr: string) => {
                 if (upErr) { throw new Error(upErr) }
                 // now commit murder on innocent branches
-                let repos = Object.keys(reposForSlaughter)
                 // console.log(reposForSlaughter)
                 repos.forEach((r) => {
                   // create branch delete commands
@@ -119,8 +132,7 @@ git()
               })
             }
           })
-        }
-        else {
+        } else {
           console.log(chalk.yellow('exiting...'))
         }
       })
