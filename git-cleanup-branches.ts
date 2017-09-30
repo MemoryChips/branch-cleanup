@@ -9,20 +9,11 @@ import gitraw = require('simple-git')  // raw command is unavailable in the prom
 import { options } from './options'
 import inquirer = require('inquirer')
 
-// var files = require('./lib/files')
-// clear()
 console.log(
   chalk.cyanBright.bold(
     figlet.textSync('Branch Cleanup', { horizontalLayout: 'full' })
   )
 )
-
-// if (!files.directoryExists('.git')) {
-//   console.log(chalk.red('Git repository not found!'))
-//   process.exit()
-// }
-
-// console.log(options)
 
 const alwaysExclude = ["master", "development", "dev"]
 const allExcludes = alwaysExclude.concat(options.excludes)
@@ -56,8 +47,6 @@ function getReposForSlaughter(branchSummary): {} {
       if (b.length !== 0 && !isBranchExcluded(b)) { repos[LOCAL_REPO].push(b) }
     }
   })
-  // console.log(branches)
-  // console.log(repos)
   return repos
 }
 
@@ -70,6 +59,7 @@ let continueQuestion = {
   type: 'confirm',
   name: 'continue',
   message: 'Continue?',
+  default: false
 }
 
 git()
@@ -79,7 +69,6 @@ git()
     console.log(chalk.yellow('You are on branch ' + currentBranch))
     if (currentBranch !== 'master') {
       console.log(chalk.yellow('You are not on the master branch.'))
-      // console.log(chalk.yellow.bold('The ' + currentBranch + 'will be removed from the list of branches to be slaughtered.'))
       console.log(chalk.yellow('The ') + chalk.green.bold(currentBranch) + chalk.yellow(' will be removed from the list of branches to be slaughtered.'))
       options.excludes.push(currentBranch)
     }
@@ -93,12 +82,10 @@ git()
     }
     inquirer.prompt([continueQuestion])
       .then((answers) => {
-        // console.log(answers)
         if (answers.continue) {
           gitraw().raw(['branch', '-a'], (err, branchSummary) => {
             if (err) { throw new Error(err) }
             let reposForSlaughter = getReposForSlaughter(branchSummary);
-            console.log(reposForSlaughter)
             let repos = Object.keys(reposForSlaughter)
             if (repos.every((r) => reposForSlaughter[r].length === 0)) {
               console.log(chalk.green('There are no branches to slaughter.'))
@@ -107,11 +94,10 @@ git()
               // continue with the slaughter
               gitraw().raw(['remote', 'update', '--prune'], (upErr, remoteUpdateResp) => {
                 if (upErr) { throw new Error(upErr) }
-                console.log(remoteUpdateResp)
-                // now commite murder on innocent branches
+                // now commit murder on innocent branches
                 let repos = Object.keys(reposForSlaughter)
                 repos.forEach((r) => {
-                  // create branch delete command
+                  // create branch delete commands
                   let command = (r === LOCAL_REPO) ? 'git branch -d ' : 'git push ' + r + ' --delete '
                   console.log(command + reposForSlaughter[r].join(' '))
                 })
@@ -131,80 +117,3 @@ git()
     console.log('An error has occurred.')
     console.log(err)
   })
-
-
-
-
-  // git.branchLocal( (err, summary) => {
-//   if (err) {return console.log(err)}
-//   console.log(summary)
-//   console.log(summary.branches)
-//   console.log(summary.all)
-// })
-
-// This does not work as expected
-// git.branch([], (err, summary) => {
-//   if (err) {return console.log(err)}
-//   console.log(summary)
-//   console.log(summary.branches)
-//   console.log(summary.all)
-// })
-
-
-
-// #!/usr/bin / env node
-// var program = require('commander')
-// var co = require('co')
-// var prompt = require('co-prompt')
-
-// program
-//   .arguments('<file>')
-//   .option('-u, --username <username>', 'The user to authenticate as')
-//   .option('-p, --password <password>', 'The user\'s password')
-//   .action(function (file) {
-//     co(function* () {
-//       let username = yield prompt('username: ')
-//       let password = yield prompt.password('password: ')
-//       console.log('user: %s pass: %s file: %s', username, password, file)
-//       // program.username, program.password, file)
-//     })
-//   })
-//   .parse(process.argv)
-
-// import argparse = require('argparse')
-// let parser = new argparse.ArgumentParser({
-//   version: '1.0.1',
-//   addHelp: true,
-//   description: 'Argparse example'
-// })
-
-
-// // #!/usr/bin / env node
-
-// // import * as program from 'commander'
-// import program = require('commander');
-// declare var process
-// declare var console
-
-// let git = '';
-
-// program
-//   .version('0.1.0')
-//   .option('-i, --includes [type]', 'Add branches to include', '.*')
-//   .option('-e, --excludes [type]', 'Add branches to exclude from cleanup', '__NOTHING__')
-//   .option('--nolocal', 'No local branches should be cleaned up')
-//   .option('--noremote', 'No remote branches should be cleaned up')
-//   .option('-c, --cheese [type]', 'Add the specified type of cheese [marble]', 'marble')
-//   .parse(process.argv)
-
-// program.excludes_default = "(master|development|dev)$"
-
-// console.log('Cleanup with:')
-// console.log(program.cheese)
-// console.log(program.includes)
-// console.log(program.nolocal)
-// // const exec = require('child_process').exec;
-// // exec('git branch', (error, stdout, stderr) => {
-// //   console.log(stdout);
-// // });
-// // console.log('Cleanup Started.')
