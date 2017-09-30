@@ -24,14 +24,17 @@ console.log(
 
 // console.log(options)
 
+const alwaysExclude = ["master", "development", "dev"]
+const allExcludes = alwaysExclude.concat(options.excludes)
+
 function isBranchExcluded(branch: string): boolean {
-  return !options.excludes.every(excludedBranch => branch !== excludedBranch)
+  return !allExcludes.every(excludedBranch => branch !== excludedBranch)
 }
-const localRepo = '__LOCAL_REPO__'
+const LOCAL_REPO = '__LOCAL_REPO__'
 
 function getReposForSlaughter(branchSummary): {} {
-  let repos = { [localRepo]: [] }
-  repos[localRepo] = []
+  let repos = { [LOCAL_REPO]: [] }
+  repos[LOCAL_REPO] = []
   const re = /[\ \*]+/g
   let branches = branchSummary.split('\n').map((b) => {
     return b.replace(re, '')
@@ -50,7 +53,7 @@ function getReposForSlaughter(branchSummary): {} {
       }
     }
     else {
-      if (b.length !== 0 && !isBranchExcluded(b)) { repos[localRepo].push(b) }
+      if (b.length !== 0 && !isBranchExcluded(b)) { repos[LOCAL_REPO].push(b) }
     }
   })
   // console.log(branches)
@@ -108,7 +111,9 @@ git()
                 // now commite murder on innocent branches
                 let repos = Object.keys(reposForSlaughter)
                 repos.forEach((r) => {
-                  console.log('git branch -d ' + reposForSlaughter[r].join(' '))
+                  // create branch delete command
+                  let command = (r === LOCAL_REPO) ? 'git branch -d ' : 'git push ' + r + ' --delete '
+                  console.log(command + reposForSlaughter[r].join(' '))
                 })
               })
             }
