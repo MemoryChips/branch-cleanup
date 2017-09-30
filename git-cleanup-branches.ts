@@ -39,7 +39,7 @@ function getReposForSlaughter(branchSummary: string): IReposSummary {
   const branches = branchSummary.split('\n').map((b) => {
     return b.replace(re, '')
   })
-  branches.forEach(b => {
+  branches.forEach((b: string) => {
     if (b.startsWith('remotes/')) {
       if (!b.includes('HEAD->origin')) {
         const branchRemote = b.substr(8)
