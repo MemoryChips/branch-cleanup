@@ -75,6 +75,15 @@ const continueQuestion = {
   default: false
 }
 
+function removeBranches(command: string[]) {
+  gitraw().raw(command, (err: string, result: string) => {
+    console.log(command)
+    console.log('Running git ' + command.join(' '))
+    if (err) { throw new Error(err) }
+    console.log(result)
+  })
+}
+
 git()
   .status()
   .then((statusSummary: git.StatusResult) => {
@@ -114,17 +123,20 @@ git()
                 // console.log(reposForSlaughter)
                 repos.forEach((r) => {
                   // create branch delete commands
-                  let command = (r === LOCAL_REPO) ? 'git branch -d ' : 'git push ' + r + ' --delete '
-                  command += reposForSlaughter[r].join(' ')
+                  let command = (r === LOCAL_REPO) ? ['branch', '-d'] : ['push', r, '--delete']
+                  command = command.concat(reposForSlaughter[r])
                   if (options['dry-run']) {
-                    console.log('Dry run only. Add --exec to perform deletes')
-                    console.log(command)
+                    console.log('Dry run only.')
+                    console.log(command.join(' '))
                   } else {
+                    // Remove merged branches
                     if (options.local && r === LOCAL_REPO) {
-                      console.log(command)
+                      // local
+                      removeBranches(command)
                     } else {
+                      // remotes
                       if (options.remote && r !== LOCAL_REPO) {
-                        console.log(command)
+                        removeBranches(command)
                       }
                     }
                   }
