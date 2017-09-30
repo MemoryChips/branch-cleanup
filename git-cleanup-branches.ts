@@ -98,7 +98,7 @@ git()
                 if (upErr) { throw new Error(upErr) }
                 // now commit murder on innocent branches
                 let repos = Object.keys(reposForSlaughter)
-                console.log(reposForSlaughter)
+                // console.log(reposForSlaughter)
                 repos.forEach((r) => {
                   // create branch delete commands
                   let command = (r === LOCAL_REPO) ? 'git branch -d ' : 'git push ' + r + ' --delete '
