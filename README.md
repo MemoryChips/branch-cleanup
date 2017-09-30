@@ -4,7 +4,8 @@
 ```bash
 # install from github or npm
 npm i
-npm run build
+npm run build  # ignore strange false error about string.startsWith and string.includes
+
 # IMPORTANT: You must do one of the following:
 # 1. After building you must edit first line in cleanup.js to point to node
 # Note: this line must be kept at ts-node to debug script during development
@@ -15,6 +16,6 @@ npm run build
 ```bash
 npm i -g # installs a link to this repo so commands can run globally
 # test with these commands
-cleanup-ts --help  # For dev; runs script in repo
+cleanup-ts --help  # For dev; compiles and runs script from source
 cleanup-branches   # For normal use; Rename in package.json if you want.
 ```
