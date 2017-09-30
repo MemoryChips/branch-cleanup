@@ -14,6 +14,7 @@
   "author": "Robert Tamlyn",
   "license": "ISC",
   "dependencies": {
+    "@types/yargs": "^8.0.2",
     "argparse": "^1.0.9",
     "chalk": "^2.1.0",
     "commander": "^2.11.0",

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env ts-node
 'use strict';
 exports.__esModule = true;
 // import chalk = require('chalk')
