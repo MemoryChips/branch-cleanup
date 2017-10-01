@@ -12,38 +12,84 @@ var options_1 = require("./options");
 var inquirer = require("inquirer");
 // declare var chalk: any
 console.log(chalk.cyanBright.bold(figlet.textSync('Branch Cleanup', { horizontalLayout: 'full' })));
+// console.log(options)
+// console.log('dry run option: ', options['dry-run'])
+// console.log('no-local option: ', options['noLocal'])
+// console.log('no-remote option: ', options['noRemote'])
+if (options_1.options.noLocal && options_1.options.noRemote) {
+    console.log(chalk.yellow.bold('*** Warning *** Running with both noLocal and noRemote will do nothing.'));
+    console.log(chalk.green.bold('Switching to dry-run with both local and remotes enabled'));
+    options_1.options.noLocal = false;
+    options_1.options.noRemote = false;
+    options_1.options['dry-run'] = true;
+}
+if (options_1.options['dry-run']) {
+    console.log(chalk.green.bold('This is a DRY-RUN. No changes will be made.'));
+}
+/*
+ *
+ * Hard Coded Branches that will never be deleted
+ * even if merged. Add or subtract as needed
+ *
+ */
 var alwaysExclude = ['master', 'development', 'dev'];
-// const alwaysExclude = ["dev"]
-var allExcludes = alwaysExclude.concat(options_1.options.excludes);
+// const alwaysExclude = ["master"]
+var allExcludes = alwaysExclude.concat(options_1.options.exclude);
 function isBranchExcluded(branch) {
+    // console.log(allExcludes)
     return !allExcludes.every(function (excludedBranch) { return branch !== excludedBranch; });
+}
+function isBranchIncluded(branch) {
+    if (isBranchExcluded(branch)) {
+        return false;
+    }
+    // otherwise always return true if include option is unspecified
+    return options_1.options.include.length === 0 || options_1.options.include.includes(branch);
 }
 var LOCAL_REPO = '__LOCAL_REPO__';
 function getReposForSlaughter(branchSummary) {
     var repos = {};
-    repos[LOCAL_REPO] = [];
+    // repos[LOCAL_REPO] = []
     var re = /[\ \*]+/g;
     var branches = branchSummary.split('\n').map(function (b) {
         return b.replace(re, '');
     });
     branches.forEach(function (b) {
         if (b.startsWith('remotes/')) {
-            if (!b.includes('HEAD->origin')) {
+            if (!options_1.options.noRemote && !b.includes('HEAD->origin')) {
                 var branchRemote = b.substr(8);
                 var pos = branchRemote.indexOf('/');
                 var remote = branchRemote.substr(0, pos);
                 var branch = branchRemote.substr(pos + 1);
-                if (!isBranchExcluded(branch)) {
+                if (isBranchIncluded(branch)) {
                     if (!repos[remote]) {
-                        repos[remote] = [];
+                        repos[remote] = [branch];
                     }
-                    repos[remote].push(branch);
+                    else {
+                        repos[remote].push(branch);
+                    }
+                    console.log(chalk.red(' *' + b));
                 }
+                else {
+                    console.log(chalk.green('  ' + b));
+                }
+            }
+            else {
+                console.log(chalk.green('  ' + b));
             }
         }
         else {
-            if (b.length !== 0 && !isBranchExcluded(b)) {
-                repos[LOCAL_REPO].push(b);
+            if (!options_1.options.noLocal && b.length !== 0 && isBranchIncluded(b)) {
+                if (!repos[LOCAL_REPO]) {
+                    repos[LOCAL_REPO] = [b];
+                }
+                else {
+                    repos[LOCAL_REPO].push(b);
+                }
+                console.log(chalk.red(' *' + b));
+            }
+            else {
+                console.log(chalk.green('  ' + b));
             }
         }
     });
@@ -61,12 +107,12 @@ function isStatusSummaryClean(statusSummary) {
 var continueQuestion = {
     type: 'confirm',
     name: 'continue',
-    message: 'Continue?',
+    message: 'Continue',
     "default": false
 };
 function removeBranches(command) {
     gitraw().raw(command, function (err, result) {
-        console.log(command);
+        // console.log(command)
         console.log('Running git ' + command.join(' '));
         if (err) {
             throw new Error(err);
@@ -83,14 +129,16 @@ git()
         console.log(chalk.yellow('You are not on the master branch.'));
         console.log(chalk.yellow('The ') +
             chalk.green.bold(currentBranch) +
-            chalk.yellow(' will be removed from the list of branches to be slaughtered.'));
-        options_1.options.excludes.push(currentBranch);
+            chalk.yellow(' branch will be removed from the list of branches to be slaughtered.'));
+        allExcludes.push(currentBranch);
     }
     if (isStatusSummaryClean(statusSummary)) {
         console.log(chalk.green('The current branch is clean. '));
     }
     else {
-        console.log(statusSummary);
+        if (options_1.options.verbose) {
+            console.log(statusSummary);
+        }
         console.log(chalk.red.bold('The current branch is dirty.'));
         console.log(chalk.green('You should commit the changes before continuing.'));
     }
@@ -98,7 +146,7 @@ git()
         .then(function (answers) {
         if (answers["continue"]) {
             gitraw().raw(['branch', '-a'], function (err, branchSummary) {
-                // console.log(branchSummary)
+                console.log(chalk.blue('Branches marked with * will be deleted'));
                 if (err) {
                     throw new Error(err);
                 }
@@ -125,17 +173,7 @@ git()
                                 console.log(command.join(' '));
                             }
                             else {
-                                // Remove merged branches
-                                if (options_1.options.local && r === LOCAL_REPO) {
-                                    // local
-                                    removeBranches(command);
-                                }
-                                else {
-                                    // remotes
-                                    if (options_1.options.remote && r !== LOCAL_REPO) {
-                                        removeBranches(command);
-                                    }
-                                }
+                                removeBranches(command);
                             }
                         });
                     });

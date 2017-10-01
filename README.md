@@ -1,4 +1,9 @@
 # Setup
+###
+TODO:
+1. Flesh out README
+2. Organzie directory structure
+3. Remove unneeded files
 
 ### Clone Repo
 ```bash
