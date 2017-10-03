@@ -1,18 +1,24 @@
 {
   "name": "git-cleanup",
   "version": "1.0.0",
-  "description": "",
+  "description": "Cleanup branches that are merged",
   "main": "git-cleanup-branches.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc *.ts; mv git-cleanup-branches.js cleanup.js; chmod +x cleanup.js"
   },
   "bin": {
-    "cleanup-ts": "tsc options.ts; ./git-cleanup-branches.ts",
     "cleanup-branches": "./cleanup.js"
   },
-  "author": "Robert Tamlyn",
-  "license": "ISC",
+  "author": "Robert Tamlyn <memorychips@yahoo.com>",
+  "contributors": [
+    "Kevin Tamlyn"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "MIT",
   "dependencies": {
     "argparse": "^1.0.9",
     "chalk": "^2.1.0",
@@ -29,5 +35,9 @@
     "@types/yargs": "^8.0.2",
     "ts-node": "^3.3.0",
     "tslint": "^5.7.0"
+  },
+  "engines": {
+    "node": ">8.0",
+    "ts-node": ">3.3"
   }
 }

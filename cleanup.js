@@ -10,12 +10,8 @@ var git = require("simple-git/promise");
 var gitraw = require('simple-git'); // raw command is unavailable in the promise version
 var options_1 = require("./options");
 var inquirer = require("inquirer");
-// declare var chalk: any
+// Start up
 console.log(chalk.cyanBright.bold(figlet.textSync('Branch Cleanup', { horizontalLayout: 'full' })));
-// console.log(options)
-// console.log('dry run option: ', options['dry-run'])
-// console.log('no-local option: ', options['noLocal'])
-// console.log('no-remote option: ', options['noRemote'])
 if (options_1.options.noLocal && options_1.options.noRemote) {
     console.log(chalk.yellow.bold('*** Warning *** Running with both noLocal and noRemote will do nothing.'));
     console.log(chalk.green.bold('Switching to dry-run with both local and remotes enabled'));
@@ -35,8 +31,36 @@ if (options_1.options['dry-run']) {
 var alwaysExclude = ['master', 'development', 'dev'];
 // const alwaysExclude = ["master"]
 var allExcludes = alwaysExclude.concat(options_1.options.exclude);
+// start up finished
+// Main
+git()
+    .status()
+    .then(function (statusSummary) {
+    var currentBranch = statusSummary.current;
+    console.log(chalk.yellow('You are on branch ') + chalk.green.bold(currentBranch));
+    if (currentBranch !== 'master') {
+        console.log(chalk.yellow('You are not on the master branch.'));
+        console.log(chalk.yellow('The ') +
+            chalk.green.bold(currentBranch) +
+            chalk.yellow(' branch will be removed from the list of branches to be slaughtered.'));
+        allExcludes.push(currentBranch);
+    }
+    if (isStatusSummaryClean(statusSummary)) {
+        console.log(chalk.green('The current branch is clean. '));
+    }
+    else {
+        if (options_1.options.verbose) {
+            console.log(statusSummary);
+        }
+        console.log(chalk.red.bold('The current branch is dirty.'));
+        console.log(chalk.green('You should commit the changes before continuing.'));
+    }
+    getRepos();
+})["catch"](function (err) {
+    console.log('An error has occurred.');
+    console.log(err);
+});
 function isBranchExcluded(branch) {
-    // console.log(allExcludes)
     return !allExcludes.every(function (excludedBranch) { return branch !== excludedBranch; });
 }
 function isBranchIncluded(branch) {
@@ -46,10 +70,9 @@ function isBranchIncluded(branch) {
     // otherwise always return true if include option is unspecified
     return options_1.options.include.length === 0 || options_1.options.include.includes(branch);
 }
-var LOCAL_REPO = '__LOCAL_REPO__';
+var LOCAL_REPO = '__LOCAL_REPO__'; // Hopefully nobody names a remote repo with this name
 function getReposForSlaughter(branchSummary) {
     var repos = {};
-    // repos[LOCAL_REPO] = []
     var re = /[\ \*]+/g;
     var branches = branchSummary.split('\n').map(function (b) {
         return b.replace(re, '');
@@ -107,7 +130,7 @@ function isStatusSummaryClean(statusSummary) {
 var continueQuestion = {
     type: 'confirm',
     name: 'continue',
-    message: 'Continue',
+    message: options_1.options['dry-run'] ? 'Continue with dry-run' : 'Continue with delete',
     "default": false
 };
 function removeBranches(command) {
@@ -117,47 +140,30 @@ function removeBranches(command) {
         if (err) {
             throw new Error(err);
         }
-        console.log(result);
+        if (result) {
+            console.log(result);
+        }
+        else {
+            console.log('Remote branch deleted.');
+        }
     });
 }
-git()
-    .status()
-    .then(function (statusSummary) {
-    var currentBranch = statusSummary.current;
-    console.log(chalk.yellow('You are on branch ' + currentBranch));
-    if (currentBranch !== 'master') {
-        console.log(chalk.yellow('You are not on the master branch.'));
-        console.log(chalk.yellow('The ') +
-            chalk.green.bold(currentBranch) +
-            chalk.yellow(' branch will be removed from the list of branches to be slaughtered.'));
-        allExcludes.push(currentBranch);
-    }
-    if (isStatusSummaryClean(statusSummary)) {
-        console.log(chalk.green('The current branch is clean. '));
-    }
-    else {
-        if (options_1.options.verbose) {
-            console.log(statusSummary);
+function getRepos() {
+    gitraw().raw(['branch', '-a', '--merged'], function (err, branchSummary) {
+        console.log(chalk.blue('Branches marked with * will be deleted'));
+        if (err) {
+            throw new Error(err);
         }
-        console.log(chalk.red.bold('The current branch is dirty.'));
-        console.log(chalk.green('You should commit the changes before continuing.'));
-    }
-    inquirer.prompt([continueQuestion])
-        .then(function (answers) {
-        if (answers["continue"]) {
-            gitraw().raw(['branch', '-a'], function (err, branchSummary) {
-                console.log(chalk.blue('Branches marked with * will be deleted'));
-                if (err) {
-                    throw new Error(err);
-                }
-                var reposForSlaughter = getReposForSlaughter(branchSummary);
-                var repos = Object.keys(reposForSlaughter);
-                if (repos.every(function (r) { return reposForSlaughter[r].length === 0; })) {
-                    console.log(chalk.green('There are no branches to slaughter.'));
-                }
-                else {
+        var reposForSlaughter = getReposForSlaughter(branchSummary);
+        var repos = Object.keys(reposForSlaughter);
+        if (repos.every(function (r) { return reposForSlaughter[r].length === 0; })) {
+            console.log(chalk.green('There are no branches to slaughter.'));
+        }
+        else {
+            inquirer.prompt([continueQuestion])
+                .then(function (answers) {
+                if (answers["continue"]) {
                     // continue with the slaughter
-                    // gitraw().raw(['remote', 'update', '--prune'], (upErr: string, remoteUpdateResp) => {
                     gitraw().raw(['remote', 'update', '--prune'], function (upErr) {
                         if (upErr) {
                             throw new Error(upErr);
@@ -178,15 +184,9 @@ git()
                         });
                     });
                 }
+            })["catch"](function (upErr) {
+                console.log(upErr);
             });
         }
-        else {
-            console.log(chalk.yellow('exiting...'));
-        }
-    })["catch"](function (err) {
-        console.log(err);
     });
-})["catch"](function (err) {
-    console.log('An error has occurred.');
-    console.log(err);
-});
+}

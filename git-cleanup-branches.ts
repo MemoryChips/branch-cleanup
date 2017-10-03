@@ -47,7 +47,7 @@ git()
   .status()
   .then((statusSummary: git.StatusResult) => {
     const currentBranch = statusSummary.current
-    console.log(chalk.yellow('You are on branch ' + currentBranch))
+    console.log(chalk.yellow('You are on branch ') + chalk.green.bold(currentBranch))
     if (currentBranch !== 'master') {
       console.log(chalk.yellow('You are not on the master branch.'))
       console.log(
@@ -148,7 +148,7 @@ function removeBranches(command: string[]) {
 }
 
 function getRepos() {
-  gitraw().raw(['branch', '-a'], (err: string, branchSummary: any) => {
+  gitraw().raw(['branch', '-a', '--merged'], (err: string, branchSummary: any) => {
     console.log(chalk.blue('Branches marked with * will be deleted'))
     if (err) { throw new Error(err) }
     const reposForSlaughter = getReposForSlaughter(branchSummary)
