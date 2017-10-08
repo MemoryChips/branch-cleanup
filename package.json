@@ -5,10 +5,10 @@
   "main": "git-cleanup-branches.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc *.ts; mv git-cleanup-branches.js cleanup.js; chmod +x cleanup.js"
+    "build": "tsc *.ts"
   },
   "bin": {
-    "cleanup-branches": "./cleanup.js"
+    "cleanup-branches": "./git-cleanup-branches.sh"
   },
   "author": "Robert Tamlyn <memorychips@yahoo.com>",
   "contributors": [
