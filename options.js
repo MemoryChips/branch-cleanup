@@ -2,6 +2,7 @@
 exports.__esModule = true;
 var argv = require("yargs");
 exports.options = argv
+    .strict()
     .version('version', '1.0.0', 'Version 1.0.0')
     .alias('version', 'vers')
     .option('e', {

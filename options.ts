@@ -1,5 +1,6 @@
 import argv = require('yargs')
 export let options = argv
+  .strict()
   .version('version', '1.0.0', 'Version 1.0.0')
   .alias('version', 'vers')
   .option('e', {

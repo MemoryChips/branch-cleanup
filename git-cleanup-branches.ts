@@ -30,6 +30,9 @@ if (options.noLocal && options.noRemote) {
 if (options['dry-run']) {
   console.log(chalk.green.bold('This is a DRY-RUN. No changes will be made.'))
 }
+
+// console.log(options)
+
 /*
  *
  * Hard Coded Branches that will never be deleted
