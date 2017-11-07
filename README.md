@@ -19,3 +19,6 @@ npm i -g # installs a link to this repo so commands can run globally
 # test with this command
 cleanup-branches   # For normal use; Rename in package.json if you want.
 ```
+
+### TODO
+- list branches that are not merged with git branch -a --no-merged
